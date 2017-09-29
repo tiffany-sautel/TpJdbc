@@ -11,13 +11,12 @@ import java.util.ArrayList;
  * Created by s16004678 on 25/09/17.
  */
 public class TestAsso1 {
-    static final String req2 = "SELECT *" +
-            "FROM PROF, MODULE " +
-            "WHERE PROF.MAT_SPEC = MODULE.CODE";
+    static final String req2 = "SELECT * " +
+            "FROM PROF";
 
     static final String reqProf = "SELECT *" +
             "FROM PROF " +
-            "WHERE PROF.MAT_SPEC =?";
+            "WHERE PROF.NUM_PROF =?";
 
     static final String reqModule = "SELECT *" +
             "FROM MODULE " +
@@ -33,20 +32,21 @@ public class TestAsso1 {
             // Execution de la requete
             // Affichage du resultat
             System.out.println("Execution de la requete : " + req2 );
-            ResultSet rset2 = stmt.executeQuery(req2);
+            ResultSet rset = stmt.executeQuery(req2);
             ArrayList<Prof> profs = new ArrayList<>();
 
-            while (rset2.next()){
-                Prof prof = creerProf(rset2);
+            while (rset.next()){
+                Prof prof = creerProf(rset);
                 profs.add(prof);
 
             }
-            for (Prof prof:profs) {
+            stmt.close();
+
+            for (Prof prof: profs) {
                 System.out.println(prof);
                 System.out.println(prof.getMatSpec());
 
             }
-            stmt.close();
             System.out.println("\nOk.\n");
         } catch (SQLException e) {
             e.printStackTrace();// Arggg!!!
@@ -62,7 +62,7 @@ public class TestAsso1 {
         prof.setAdrProf(rset2.getString("ADR_PROF"));
         prof.setCpProf(rset2.getString("CP_PROF"));
         prof.setVilleProf(rset2.getString("VILLE_PROF"));
-        prof.setMatSpec(creerModule(rset2.getString()));
+        prof.setMatSpec(creerModule(rset2.getString("MAT_SPEC")));
         return prof;
     }
 
@@ -70,19 +70,24 @@ public class TestAsso1 {
         Connection conn = ConnexionUnique.getInstance().getConnection();
         PreparedStatement preparStt = conn.prepareStatement(reqProf);
         preparStt.setInt(1,numProf);
+        preparStt.execute();
         ResultSet resSet = preparStt.executeQuery();
-        return creerProf(resSet);
-
+        Prof prof = creerProf(resSet);
+        preparStt.close();
+        return prof;
     }
     private static Module creerModule(String code)throws SQLException{
         Connection conn = ConnexionUnique.getInstance().getConnection();
         PreparedStatement preparStt = conn.prepareStatement(reqModule);
         preparStt.setString(1,code);
+        preparStt.execute();
         ResultSet resSet = preparStt.executeQuery();
-        return creerModule(resSet);
+        Module module = creerModule(resSet);
+        preparStt.close();
+        return module;
     }
 
-    private static Module creerMatSpec(ResultSet rset2) throws SQLException {
+    private static Module creerModule(ResultSet rset2) throws SQLException {
         Module MatSpec = new Module();
         MatSpec.setCode(rset2.getString("CODE"));
         MatSpec.setLibelle(rset2.getString("LIBELLE"));
@@ -93,8 +98,8 @@ public class TestAsso1 {
         MatSpec.setDiscipline(rset2.getString("DISCIPLINE"));
         MatSpec.setCoefCc(rset2.getInt("COEFF_CC"));
         MatSpec.setCoefTest(rset2.getInt("COEFF_TEST"));
-        responsable.setNumProf(creerProf(rset2.getInt("RESP")));
-        MatSpec.setResponsable(responsable);
+        MatSpec.setResponsable(creerProf(rset2.getInt("RESP")));
+        MatSpec.setPere(creerModule(rset2.getString("CODEPERE")));
         return MatSpec;
     }
 }
